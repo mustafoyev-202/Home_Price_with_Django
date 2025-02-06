@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bangalore Home Price Prediction</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap");
+
+      body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .form {
+        max-width: 500px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+
+      h2 {
+        color: #fff;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .switch-field {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .switch-field input {
+        display: none;
+      }
+
+      .switch-field label {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .switch-field input:checked + label {
+        background-color: #ffcc00;
+        color: #333;
+      }
+
+      input,
+      select,
+      .submit {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 6px;
+        box-sizing: border-box;
+      }
+
+      input,
+      select {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-size: 16px;
+      }
+
+      select option {
+        color: black;
+      }
+
+      .submit {
+        background: #ffcc00;
+        color: black;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s ease;
+      }
+
+      .submit:hover {
+        background: #ffdb4d;
+      }
+
+      .result {
+        margin-top: 20px;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .error {
+        color: #ff4d4d;
+        text-align: center;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="form" id="predictionForm">
+      <h2>Area (Square Feet)</h2>
+      <input
+        type="number"
+        id="uiSqft"
+        name="Squareft"
+        value="1000"
+        min="100"
+        required
+      />
+
+      <h2>BHK</h2>
+      <div class="switch-field">
+        <input type="radio" id="radio-bhk-1" name="uiBHK" value="1" />
+        <label for="radio-bhk-1">1</label>
+        <input type="radio" id="radio-bhk-2" name="uiBHK" value="2" checked />
+        <label for="radio-bhk-2">2</label>
+        <input type="radio" id="radio-bhk-3" name="uiBHK" value="3" />
+        <label for="radio-bhk-3">3</label>
+        <input type="radio" id="radio-bhk-4" name="uiBHK" value="4" />
+        <label for="radio-bhk-4">4</label>
+        <input type="radio" id="radio-bhk-5" name="uiBHK" value="5" />
+        <label for="radio-bhk-5">5</label>
+      </div>
+
+      <h2>Bath</h2>
+      <div class="switch-field">
+        <input type="radio" id="radio-bath-1" name="uiBathrooms" value="1" />
+        <label for="radio-bath-1">1</label>
+        <input
+          type="radio"
+          id="radio-bath-2"
+          name="uiBathrooms"
+          value="2"
+          checked
+        />
+        <label for="radio-bath-2">2</label>
+        <input type="radio" id="radio-bath-3" name="uiBathrooms" value="3" />
+        <label for="radio-bath-3">3</label>
+        <input type="radio" id="radio-bath-4" name="uiBathrooms" value="4" />
+        <label for="radio-bath-4">4</label>
+        <input type="radio" id="radio-bath-5" name="uiBathrooms" value="5" />
+        <label for="radio-bath-5">5</label>
+      </div>
+
+      <h2>Location</h2>
+      <select id="uiLocations" required>
+        <option value="" disabled selected>Choose a Location</option>
+        {% for location in locations %}
+        <option value="{{ location }}">{{ location }}</option>
+        {% endfor %}
+      </select>
+
+      <button class="submit" type="submit">Estimate Price</button>
+      <div id="uiEstimatedPrice" class="result"></div>
+    </form>
+
+    <script>
+      // Get CSRF token from cookie
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      // Handle form submission
+      document
+        .getElementById("predictionForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const estimatedPriceDiv = document.getElementById("uiEstimatedPrice");
+          estimatedPriceDiv.innerHTML = "Calculating...";
+
+          const formData = {
+            total_sqft: parseFloat(document.getElementById("uiSqft").value),
+            bhk: parseInt(
+              document.querySelector('input[name="uiBHK"]:checked').value
+            ),
+            bath: parseInt(
+              document.querySelector('input[name="uiBathrooms"]:checked').value
+            ),
+            location: document.getElementById("uiLocations").value,
+          };
+
+          try {
+            const response = await fetch("/predict_home_price", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+              },
+              body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (data.status === "success") {
+              estimatedPriceDiv.innerHTML = `<h2>₹${data.estimated_price} Lakhs</h2>`;
+            } else {
+              estimatedPriceDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+            }
+          } catch (error) {
+            estimatedPriceDiv.innerHTML =
+              '<div class="error">Error calculating price. Please try again.</div>';
+            console.error("Error:", error);
+          }
+        });
+
+      // No need for window.onload event since we're using Django template for locations
+    </script>
+  </body>
+</html>
