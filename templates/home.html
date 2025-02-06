@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bangalore Home Price Prediction</title>
+    {% csrf_token %}
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap");
 
@@ -114,6 +115,7 @@
   </head>
   <body>
     <form class="form" id="predictionForm">
+      {% csrf_token %}
       <h2>Area (Square Feet)</h2>
       <input
         type="number"
@@ -171,30 +173,14 @@
     </form>
 
     <script>
-      // Get CSRF token from cookie
-      function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-          const cookies = document.cookie.split(";");
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === name + "=") {
-              cookieValue = decodeURIComponent(
-                cookie.substring(name.length + 1)
-              );
-              break;
-            }
-          }
-        }
-        return cookieValue;
-      }
-
-      // Handle form submission
       document
         .getElementById("predictionForm")
         .addEventListener("submit", async function (e) {
           e.preventDefault();
 
+          const csrftoken = document.querySelector(
+            "[name=csrfmiddlewaretoken]"
+          ).value;
           const estimatedPriceDiv = document.getElementById("uiEstimatedPrice");
           estimatedPriceDiv.innerHTML = "Calculating...";
 
@@ -214,7 +200,7 @@
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken": getCookie("csrftoken"),
+                "X-CSRFToken": csrftoken,
               },
               body: JSON.stringify(formData),
             });
@@ -232,8 +218,6 @@
             console.error("Error:", error);
           }
         });
-
-      // No need for window.onload event since we're using Django template for locations
     </script>
   </body>
 </html>
