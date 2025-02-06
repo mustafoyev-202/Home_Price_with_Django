@@ -32,7 +32,13 @@ ALLOWED_HOSTS = [
     "0.0.0.0",
 ]
 
-CSRF_TRUSTED_ORIGINS = ["https://home-price-with-django.onrender.com"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://home-price-with-django.onrender.com",
+    "http://127.0.0.1",
+    "http://localhost",
+    "http://0.0.0.0",
+]
+
 
 # Application definition
 
